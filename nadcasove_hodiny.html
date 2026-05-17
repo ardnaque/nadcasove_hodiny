@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Správa nadčasových hodín — ZŠ 2. stupeň</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f9fa;--surface:#ffffff;--border:#e0e0e0;--border2:#c8c8c8;
+  --text:#1a1a1a;--text2:#555;--text3:#888;
+  --blue:#185FA5;--blue-light:#E6F1FB;--blue-dark:#0C447C;
+  --green:#3B6D11;--green-light:#EAF3DE;--green-border:#C0DD97;
+  --red:#A32D2D;--red-light:#FCEBEB;--red-border:#F7C1C1;
+  --amber:#854F0B;--amber-light:#FAEEDA;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+a{color:var(--blue);text-decoration:none}
+
+/* Layout */
+.app{min-height:100vh;display:flex;flex-direction:column}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50}
+.header-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.school-year{font-size:12px;color:var(--text3);background:var(--bg);padding:3px 10px;border-radius:20px;border:1px solid var(--border)}
+
+/* Nav */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 1.5rem;gap:0}
+.nav-btn{padding:12px 18px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* Content */
+.content{flex:1;padding:1.5rem;max-width:980px;margin:0 auto;width:100%}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px;color:var(--text)}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.field input,.field select{padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;width:100%;transition:border .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.12)}
+.field input:hover,.field select:hover{border-color:var(--border2)}
+
+/* Radio */
+.radio-group{display:flex;gap:8px}
+.radio-opt{display:flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:13px;transition:all .15s;flex:1;justify-content:center;user-select:none}
+.radio-opt:hover{border-color:var(--border2);background:var(--bg)}
+.radio-opt.paid{background:var(--green-light);border-color:var(--green-border);color:var(--green);font-weight:600}
+.radio-opt.unpaid{background:var(--red-light);border-color:var(--red-border);color:var(--red);font-weight:600}
+
+/* Buttons */
+.btn{padding:9px 16px;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:500}
+.btn:hover{background:var(--bg);border-color:var(--border2)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-success{background:var(--green-light);color:var(--green);border-color:var(--green-border)}
+.btn-success:hover{background:var(--green-border)}
+.btn-danger{background:var(--red-light);color:var(--red);border-color:var(--red-border);padding:6px 10px}
+.btn-danger:hover{background:var(--red-border)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Table */
+.table-wrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;font-size:11px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;background:var(--bg)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.badge-paid{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)}
+.badge-unpaid{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)}
+
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;text-align:center}
+.stat-val{font-size:26px;font-weight:700}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Alerts */
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.alert-success{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)}
+.alert-info{background:var(--blue-light);color:var(--blue);border:1px solid #B5D4F4}
+.alert-warn{background:var(--amber-light);color:var(--amber);border:1px solid #FAC775}
+
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1.5rem;width:500px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-header{font-size:15px;font-weight:700;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:4px 8px;border-radius:4px}
+.modal-close:hover{background:var(--bg);color:var(--text)}
+
+/* External header */
+.ext-hero{background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:#fff;padding:1.5rem;border-radius:var(--radius-lg);margin-bottom:1rem}
+.ext-hero h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.ext-hero p{font-size:13px;opacity:.85}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:1rem 0}
+
+/* Link box */
+.link-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:12px;font-family:monospace;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:10px;word-break:break-all}
+
+/* Empty state */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-icon{font-size:48px;display:block;margin-bottom:12px}
+.empty p{font-size:14px}
+
+/* Section label */
+.section-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+
+/* Tabs inside admin */
+.inner-tabs{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+
+/* Responsive */
+@media(max-width:640px){
+  .form-grid,.form-grid-3{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .content{padding:1rem}
+  .header{padding:0 1rem}
+  .nav{padding:0 .5rem}
+  .nav-btn{padding:10px 10px;font-size:12px}
+}
+
+/* Print */
+@media print{
+  .no-print{display:none!important}
+  .card{break-inside:avoid;border:1px solid #ccc;margin-bottom:.5rem}
+  .header,.nav{position:static}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- HEADER -->
+<div class="header no-print">
+  <div class="header-brand">
+    <div class="logo">🏫</div>
+    <span>Správa nadčasových hodín &mdash; ZŠ 2. stupeň</span>
+  </div>
+  <div class="school-year">Školský rok 2025/2026</div>
+</div>
+
+<!-- NAV -->
+<div class="nav no-print" id="nav">
+  <button class="nav-btn active" onclick="showView('admin')" id="nav-admin">
+    🔐 Administrátor
+  </button>
+  <button class="nav-btn" onclick="showView('external')" id="nav-external">
+    👥 Externý vstup
+  </button>
+</div>
+
+<!-- VIEWS -->
+<div class="content" id="view-admin"></div>
+<div class="content" id="view-external" style="display:none"></div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="modal-title">Upraviť záznam</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'nadcasove_hodiny_v2';
+const PREDMETY = [
+  'Slovenský jazyk a literatúra','Anglický jazyk','Nemecký jazyk',
+  'Francúzsky jazyk','Ruský jazyk','Matematika','Fyzika','Chémia',
+  'Biológia','Dejepis','Geografia','Občianska náuka','Etická výchova',
+  'Náboženská výchova','Informatika','Technika','Hudobná výchova',
+  'Výtvarná výchova','Telesná a športová výchova','Svet práce',
+  'Triednická hodina','Iný predmet'
+];
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function genId() { return Date.now() + Math.floor(Math.random()*1000); }
+function fmtDate(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// ─── VIEW SWITCHING ──────────────────────────────────────────────────────────
+let currentView = 'admin';
+function showView(v) {
+  currentView = v;
+  document.getElementById('view-admin').style.display = v === 'admin' ? '' : 'none';
+  document.getElementById('view-external').style.display = v === 'external' ? '' : 'none';
+  document.getElementById('nav-admin').className = 'nav-btn' + (v==='admin'?' active':'');
+  document.getElementById('nav-external').className = 'nav-btn' + (v==='external'?' active':'');
+  if (v === 'admin') renderAdmin();
+  else renderExternal();
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openModal(title, html) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').style.display = 'none';
+}
+
+// ─── FORM BUILDER ────────────────────────────────────────────────────────────
+function predmetOptions(sel) {
+  return PREDMETY.map(p =>
+    `<option value="${p}"${p===sel?' selected':''}>${p}</option>`
+  ).join('');
+}
+
+function buildForm(id, entry, onSaveCallback) {
+  const e = entry || {};
+  const formId = 'form_' + id;
+  return `
+    <div id="${formId}">
+      <div class="form-grid">
+        <div class="field">
+          <label>Dátum *</label>
+          <input type="date" id="${id}_datum" value="${e.datum||today()}" max="${today()}">
+        </div>
+        <div class="field">
+          <label>Predmet *</label>
+          <select id="${id}_predmet">
+            <option value="">— vybrať predmet —</option>
+            ${predmetOptions(e.predmet||'')}
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Meno *</label>
+          <input type="text" id="${id}_meno" placeholder="Meno" value="${e.meno||''}">
+        </div>
+        <div class="field">
+          <label>Priezvisko *</label>
+          <input type="text" id="${id}_priezvisko" placeholder="Priezvisko" value="${e.priezvisko||''}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>Typ hodiny *</label>
+        <div class="radio-group">
+          <div class="radio-opt ${e.platena!=='nie'?'paid':''}" id="${id}_paid" onclick="selectPlatena('${id}','ano')">
+            💰 Platená
+          </div>
+          <div class="radio-opt ${e.platena==='nie'?'unpaid':''}" id="${id}_unpaid" onclick="selectPlatena('${id}','nie')">
+            🚫 Neplatená
+          </div>
+        </div>
+        <input type="hidden" id="${id}_platena" value="${e.platena||'ano'}">
+      </div>
+      <div id="${id}_alert"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        ${onSaveCallback==='update'?`<button class="btn" onclick="closeModal()">Zrušiť</button>`:''}
+        <button class="btn btn-primary" onclick="submitForm('${id}','${onSaveCallback}',${entry?`'${entry.id}'`:'null'})">
+          ${entry ? '💾 Uložiť zmeny' : '➕ Pridať hodinu'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function selectPlatena(id, val) {
+  document.getElementById(id+'_platena').value = val;
+  document.getElementById(id+'_paid').className = 'radio-opt ' + (val==='ano'?'paid':'');
+  document.getElementById(id+'_unpaid').className = 'radio-opt ' + (val==='nie'?'unpaid':'');
+}
+
+function submitForm(id, callback, entryId) {
+  const datum = document.getElementById(id+'_datum').value;
+  const predmet = document.getElementById(id+'_predmet').value;
+  const meno = document.getElementById(id+'_meno').value.trim();
+  const priezvisko = document.getElementById(id+'_priezvisko').value.trim();
+  const platena = document.getElementById(id+'_platena').value;
+  const alertEl = document.getElementById(id+'_alert');
+
+  if (!datum||!predmet||!meno||!priezvisko) {
+    alertEl.innerHTML = `<div class="alert alert-warn">⚠️ Vyplňte všetky povinné polia.</div>`;
+    return;
+  }
+
+  const data = loadData();
+  if (callback === 'update' && entryId) {
+    const idx = data.findIndex(e => String(e.id) === String(entryId));
+    if (idx>=0) data[idx] = {...data[idx], datum, predmet, meno, priezvisko, platena};
+    saveData(data);
+    closeModal();
+    renderAdmin();
+  } else {
+    data.push({id:genId(), datum, predmet, meno, priezvisko, platena, ts:Date.now()});
+    saveData(data);
+    if (callback === 'external') {
+      alertEl.innerHTML = `<div class="alert alert-success">✅ Hodina bola úspešne zaznamenaná!</div>`;
+      document.getElementById(id+'_predmet').value = '';
+      document.getElementById(id+'_meno').value = '';
+      document.getElementById(id+'_priezvisko').value = '';
+      document.getElementById(id+'_datum').value = today();
+      selectPlatena(id, 'ano');
+      setTimeout(()=>{ alertEl.innerHTML=''; renderExternal(); }, 1500);
+    } else {
+      renderAdmin('zoznam');
+    }
+  }
+}
+
+// ─── DELETE ──────────────────────────────────────────────────────────────────
+function deleteEntry(id) {
+  if (!confirm('Naozaj chcete vymazať tento záznam?')) return;
+  const data = loadData().filter(e => String(e.id) !== String(id));
+  saveData(data);
+  renderAdmin();
+}
+
+// ─── EDIT MODAL ──────────────────────────────────────────────────────────────
+function editEntry(id) {
+  const data = loadData();
+  const entry = data.find(e => String(e.id) === String(id));
+  if (!entry) return;
+  openModal('✏️ Upraviť záznam', buildForm('edit', entry, 'update'));
+}
+
+// ─── FILTERS (admin) ─────────────────────────────────────────────────────────
+let filters = {od:'', do:'', meno:'', predmet:''};
+
+function applyFilter(key, val) {
+  filters[key] = val;
+  renderAdmin('zoznam');
+}
+
+function getFiltered() {
+  return loadData().filter(e => {
+    if (filters.od && e.datum < filters.od) return false;
+    if (filters.do && e.datum > filters.do) return false;
+    if (filters.meno && !(e.meno+' '+e.priezvisko).toLowerCase().includes(filters.meno.toLowerCase())) return false;
+    if (filters.predmet && e.predmet !== filters.predmet) return false;
+    return true;
+  }).sort((a,b) => a.datum.localeCompare(b.datum));
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const filtered = getFiltered();
+  const header = 'Dátum;Meno;Priezvisko;Predmet;Typ hodiny';
+  const rows = filtered.map(e =>
+    `${fmtDate(e.datum)};${e.meno};${e.priezvisko};${e.predmet};${e.platena==='ano'?'Platená':'Neplatená'}`
+  );
+  downloadFile('\uFEFF'+[header,...rows].join('\n'), 'nadcasove_hodiny.csv', 'text/csv;charset=utf-8');
+}
+
+function exportTXT() {
+  const filtered = getFiltered();
+  const platene = filtered.filter(e=>e.platena==='ano').length;
+  const neplatene = filtered.filter(e=>e.platena==='nie').length;
+  const pedagogs = [...new Set(filtered.map(e=>e.meno+' '+e.priezvisko))];
+
+  let txt = 'ZHRNUTIE NADČASOVÝCH HODÍN\n';
+  txt += '='.repeat(60) + '\n';
+  txt += `Vygenerované: ${new Date().toLocaleDateString('sk-SK')} ${new Date().toLocaleTimeString('sk-SK')}\n\n`;
+  txt += `Celkový počet hodín: ${filtered.length}\n`;
+  txt += `Platené: ${platene}  |  Neplatené: ${neplatene}\n`;
+  txt += `Počet pedagógov: ${pedagogs.length}\n\n`;
+
+  if (filters.od || filters.do || filters.meno || filters.predmet) {
+    txt += 'AKTÍVNE FILTRE:\n';
+    if (filters.od) txt += `  - Dátum od: ${fmtDate(filters.od)}\n`;
+    if (filters.do) txt += `  - Dátum do: ${fmtDate(filters.do)}\n`;
+    if (filters.meno) txt += `  - Pedagóg: ${filters.meno}\n`;
+    if (filters.predmet) txt += `  - Predmet: ${filters.predmet}\n`;
+    txt += '\n';
+  }
+
+  txt += 'ZOZNAM PODĽA DÁTUMU\n' + '-'.repeat(60) + '\n';
+  const byDate = {};
+  filtered.forEach(e => {
+    if (!byDate[e.datum]) byDate[e.datum] = [];
+    byDate[e.datum].push(e);
+  });
+  Object.keys(byDate).sort().forEach(d => {
+    txt += `\n📅 ${fmtDate(d)}\n`;
+    byDate[d].forEach(e => {
+      txt += `   • ${e.meno} ${e.priezvisko} — ${e.predmet} (${e.platena==='ano'?'Platená':'Neplatená'})\n`;
+    });
+  });
+
+  txt += '\n' + '='.repeat(60) + '\n';
+  txt += 'PREHĽAD PEDAGÓGOV\n' + '-'.repeat(60) + '\n';
+  pedagogs.forEach(p => {
+    const pHodiny = filtered.filter(e=>e.meno+' '+e.priezvisko===p);
+    const pp = pHodiny.filter(e=>e.platena==='ano').length;
+    const np = pHodiny.filter(e=>e.platena==='nie').length;
+    txt += `  ${p}: ${pHodiny.length} hodín (platené: ${pp}, neplatené: ${np})\n`;
+  });
+
+  downloadFile(txt, 'nadcasove_hodiny_zhrnutie.txt', 'text/plain;charset=utf-8');
+}
+
+function exportHTML() {
+  const filtered = getFiltered();
+  const platene = filtered.filter(e=>e.platena==='ano').length;
+  const neplatene = filtered.filter(e=>e.platena==='nie').length;
+  const pedagogs = [...new Set(filtered.map(e=>e.meno+' '+e.priezvisko))];
+  const byDate = {};
+  filtered.forEach(e => {
+    if (!byDate[e.datum]) byDate[e.datum] = [];
+    byDate[e.datum].push(e);
+  });
+
+  let rows = '';
+  filtered.forEach(e => {
+    rows += `<tr>
+      <td>${fmtDate(e.datum)}</td>
+      <td>${e.meno} ${e.priezvisko}</td>
+      <td>${e.predmet}</td>
+      <td><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:${e.platena==='ano'?'#EAF3DE':'#FCEBEB'};color:${e.platena==='ano'?'#3B6D11':'#A32D2D'}">${e.platena==='ano'?'Platená':'Neplatená'}</span></td>
+    </tr>`;
+  });
+
+  const html = `<!DOCTYPE html><html lang="sk"><head><meta charset="UTF-8">
+<title>Nadčasové hodiny — zhrnutie</title>
+<style>body{font-family:Arial,sans-serif;padding:2cm;color:#1a1a1a;font-size:12pt}
+h1{font-size:18pt;color:#185FA5;margin-bottom:4px}
+.meta{color:#555;font-size:10pt;margin-bottom:20px}
+.stats{display:flex;gap:20px;margin-bottom:20px}
+.stat{border:1px solid #e0e0e0;border-radius:8px;padding:12px 20px;text-align:center}
+.stat-val{font-size:22pt;font-weight:700}
+.stat-lbl{font-size:9pt;color:#888;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;font-size:11pt}
+th{background:#185FA5;color:#fff;padding:8px 10px;text-align:left;font-size:9pt}
+td{padding:7px 10px;border-bottom:1px solid #eee}
+tr:nth-child(even) td{background:#f8f9fa}
+@media print{body{padding:1cm}.stat{break-inside:avoid}}</style></head>
+<body>
+<h1>📋 Zhrnutie nadčasových hodín</h1>
+<p class="meta">Vygenerované: ${new Date().toLocaleDateString('sk-SK')} ${new Date().toLocaleTimeString('sk-SK')} | ZŠ 2. stupeň</p>
+<div class="stats">
+  <div class="stat"><div class="stat-val">${filtered.length}</div><div class="stat-lbl">Celkom hodín</div></div>
+  <div class="stat"><div class="stat-val" style="color:#3B6D11">${platene}</div><div class="stat-lbl">Platené</div></div>
+  <div class="stat"><div class="stat-val" style="color:#A32D2D">${neplatene}</div><div class="stat-lbl">Neplatené</div></div>
+  <div class="stat"><div class="stat-val" style="color:#185FA5">${pedagogs.length}</div><div class="stat-lbl">Pedagógovia</div></div>
+</div>
+<table>
+  <thead><tr><th>Dátum</th><th>Pedagóg</th><th>Predmet</th><th>Typ hodiny</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<p style="margin-top:30px;font-size:9pt;color:#aaa;text-align:right">Tento dokument bol vygenerovaný automaticky zo systému správy nadčasových hodín.</p>
+</body></html>`;
+
+  downloadFile(html, 'nadcasove_hodiny_report.html', 'text/html;charset=utf-8');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ─── RENDER ADMIN ────────────────────────────────────────────────────────────
+let adminTab = 'zoznam';
+
+function renderAdmin(tab) {
+  if (tab) adminTab = tab;
+  const filtered = getFiltered();
+  const platene = filtered.filter(e=>e.platena==='ano').length;
+  const neplatene = filtered.filter(e=>e.platena==='nie').length;
+  const pedagogs = [...new Set(filtered.map(e=>e.meno+' '+e.priezvisko))].length;
+
+  const tableRows = filtered.length === 0
+    ? `<tr><td colspan="5"><div class="empty"><span class="empty-icon">📂</span><p>Žiadne záznamy nezodpovedajú filtru</p></div></td></tr>`
+    : filtered.map(e => `
+      <tr>
+        <td><strong>${fmtDate(e.datum)}</strong></td>
+        <td>${e.meno} ${e.priezvisko}</td>
+        <td>${e.predmet}</td>
+        <td><span class="badge ${e.platena==='ano'?'badge-paid':'badge-unpaid'}">${e.platena==='ano'?'Platená':'Neplatená'}</span></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="editEntry('${e.id}')">✏️ Upraviť</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.id}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('');
+
+  const html = `
+    <div class="inner-tabs no-print">
+      <button class="btn${adminTab==='zoznam'?' btn-primary':''}" onclick="renderAdmin('zoznam')">📋 Zoznam hodín</button>
+      <button class="btn${adminTab==='pridat'?' btn-primary':''}" onclick="renderAdmin('pridat')">➕ Pridať hodinu</button>
+      <button class="btn${adminTab==='export'?' btn-primary':''}" onclick="renderAdmin('export')">📤 Export</button>
+    </div>
+
+    ${adminTab==='zoznam' ? `
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-val">${filtered.length}</div><div class="stat-lbl">Celkom hodín</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--green)">${platene}</div><div class="stat-lbl">Platené</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--red)">${neplatene}</div><div class="stat-lbl">Neplatené</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--blue)">${pedagogs}</div><div class="stat-lbl">Pedagógovia</div></div>
+      </div>
+
+      <div class="card no-print">
+        <div class="section-label">🔍 Filter</div>
+        <div class="form-grid-3">
+          <div class="field"><label>Dátum od</label>
+            <input type="date" value="${filters.od}" oninput="applyFilter('od',this.value)"></div>
+          <div class="field"><label>Dátum do</label>
+            <input type="date" value="${filters.do}" oninput="applyFilter('do',this.value)"></div>
+          <div class="field"><label>Predmet</label>
+            <select onchange="applyFilter('predmet',this.value)">
+              <option value="">Všetky predmety</option>
+              ${PREDMETY.map(p=>`<option value="${p}"${p===filters.predmet?' selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px"><label>Meno / priezvisko</label>
+          <input type="text" placeholder="Hľadať pedagóga..." value="${filters.meno}" oninput="applyFilter('meno',this.value)">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Dátum</th><th>Pedagóg</th><th>Predmet</th><th>Typ hodiny</th><th class="no-print">Akcie</th></tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </div>
+    ` : ''}
+
+    ${adminTab==='pridat' ? `
+      <div class="card">
+        <div class="card-title">➕ Nová nadčasová hodina</div>
+        ${buildForm('add', null, 'admin')}
+      </div>
+    ` : ''}
+
+    ${adminTab==='export' ? `
+      <div class="card">
+        <div class="card-title">📤 Export dát</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">
+          Exportujte záznamy podľa aktívneho filtra. Aktuálne: <strong>${filtered.length} hodín</strong>.
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="exportCSV()">📊 Stiahnuť CSV (Excel)</button>
+          <button class="btn" onclick="exportTXT()">📄 Stiahnuť TXT (zhrnutie)</button>
+          <button class="btn btn-primary" onclick="exportHTML()">🖨️ Stiahnuť HTML report</button>
+        </div>
+        <div class="alert alert-info" style="margin-top:14px">
+          💡 <strong>HTML report</strong> môžete otvoriť v prehliadači a vytlačiť ako PDF cez Ctrl+P → Uložiť ako PDF.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👥 Externý prístup pre pedagógov</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">
+          Pedagógovia môžu zadávať hodiny priamo cez záložku <strong>Externý vstup</strong> v tejto aplikácii.
+        </p>
+        <div class="alert alert-info">
+          📌 Zdieľajte tento HTML súbor (alebo jeho URL) s pedagógmi a inštruujte ich, aby použili záložku "Externý vstup".
+        </div>
+        <div class="divider"></div>
+        <div class="section-label">Inštrukcie pre pedagógov</div>
+        <ol style="font-size:13px;color:var(--text2);padding-left:1.5rem;line-height:2.2">
+          <li>Otvorte aplikáciu <code>nadcasove_hodiny.html</code> v prehliadači</li>
+          <li>Kliknite na záložku <strong>Externý vstup</strong></li>
+          <li>Vyplňte formulár: dátum, predmet, meno a typ hodiny</li>
+          <li>Záznamy budú uložené v prehliadači</li>
+        </ol>
+        <div class="alert alert-warn" style="margin-top:12px">
+          ⚠️ <strong>Poznámka:</strong> Dáta sa ukladajú v prehliadači (localStorage). Pre zdieľanie medzi viacerými zariadeniami exportujte CSV a importujte u administrátora.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ Správa dát</div>
+        <div class="btn-group">
+          <button class="btn" onclick="importCSVDialog()">📥 Importovať CSV</button>
+          <button class="btn btn-danger" style="margin-left:auto" onclick="clearAll()">🗑️ Vymazať všetky dáta</button>
+        </div>
+        <input type="file" id="csv-import-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+      </div>
+    ` : ''}
+  `;
+
+  document.getElementById('view-admin').innerHTML = html;
+}
+
+// ─── IMPORT CSV ──────────────────────────────────────────────────────────────
+function importCSVDialog() {
+  document.getElementById('csv-import-input').click();
+}
+
+function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    const data = loadData();
+    let added = 0;
+    lines.slice(1).forEach(line => {
+      const cols = line.split(';');
+      if (cols.length < 5) return;
+      const [datumStr, meno, priezvisko, predmet, typ] = cols;
+      const parts = datumStr.trim().split('.');
+      if (parts.length !== 3) return;
+      const datum = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+      data.push({
+        id: genId(),
+        datum, meno: meno.trim(), priezvisko: priezvisko.trim(),
+        predmet: predmet.trim(),
+        platena: typ.trim().includes('Platená') ? 'ano' : 'nie',
+        ts: Date.now()
+      });
+      added++;
+    });
+    saveData(data);
+    alert(`Importovaných ${added} záznamov.`);
+    renderAdmin();
+  };
+  reader.readAsText(file, 'utf-8');
+  input.value = '';
+}
+
+function clearAll() {
+  if (!confirm('Naozaj chcete NATRVALO vymazať VŠETKY záznamy? Túto akciu nie je možné vrátiť späť.')) return;
+  saveData([]);
+  renderAdmin();
+}
+
+// ─── RENDER EXTERNAL ─────────────────────────────────────────────────────────
+function renderExternal() {
+  const recent = loadData().sort((a,b)=>b.ts-a.ts).slice(0,5);
+  const recentRows = recent.length === 0
+    ? `<tr><td colspan="4"><div class="empty"><span class="empty-icon">📂</span><p>Zatiaľ žiadne záznamy</p></div></td></tr>`
+    : recent.map(e => `
+      <tr>
+        <td>${fmtDate(e.datum)}</td>
+        <td>${e.meno} ${e.priezvisko}</td>
+        <td>${e.predmet}</td>
+        <td><span class="badge ${e.platena==='ano'?'badge-paid':'badge-unpaid'}">${e.platena==='ano'?'Platená':'Neplatená'}</span></td>
+      </tr>`).join('');
+
+  document.getElementById('view-external').innerHTML = `
+    <div class="ext-hero">
+      <h2>🏫 Zadávanie nadčasových hodín</h2>
+      <p>Základná škola &mdash; Záznamy nadčasovej výučby (2. stupeň ZŠ)</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 Zadajte nadčasovú hodinu</div>
+      ${buildForm('ext', null, 'external')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 Posledné záznamy</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dátum</th><th>Pedagóg</th><th>Predmet</th><th>Typ</th></tr></thead>
+          <tbody>${recentRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderAdmin();
+</script>
+</body>
+</html>
