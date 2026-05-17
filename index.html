@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang='sk'>
+<head>
+<meta charset='UTF-8'>
+<title>Externý vstup (GitHub verzia)</title>
+</head>
+<body>
+<h2>Externý vstup</h2>
+<input id='meno' placeholder='Meno'><br>
+<input id='priezvisko' placeholder='Priezvisko'><br>
+<input id='datum' type='date'><br>
+<button onclick='save()'>Odoslať</button>
+
+<script>
+const GITHUB_USER = "ardnaque";
+const GITHUB_REPO = "nadcasove_hodiny";
+const FILE_PATH = "data.json";
+const TOKEN = "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";
+const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+
+async function loadData(){
+  const res = await fetch(API_URL, {headers:{Authorization:`Bearer ${TOKEN}`}});
+  const data = await res.json();
+  return {list:JSON.parse(atob(data.content)), sha:data.sha};
+}
+
+async function save(){
+  const meno = document.getElementById('meno').value;
+  const priezvisko = document.getElementById('priezvisko').value;
+  const datum = document.getElementById('datum').value;
+
+  const file = await loadData();
+  file.list.push({meno, priezvisko, datum});
+
+  const updated = btoa(unescape(encodeURIComponent(JSON.stringify(file.list,null,2))));
+
+  await fetch(API_URL, {
+    method:"PUT",
+    headers:{Authorization:`Bearer ${TOKEN}`,"Content-Type":"application/json"},
+    body:JSON.stringify({message:"add record",content:updated,sha:file.sha})
+  });
+
+  alert("Uložené na GitHub!");
+}
+</script>
+</body>
+</html>

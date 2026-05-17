@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang='sk'>
+<head>
+<meta charset='UTF-8'>
+<title>Admin (GitHub verzia)</title>
+</head>
+<body>
+<h2>Admin panel (GitHub cloud verzia)</h2>
+<button onclick='loadData()'>Načítať dáta</button>
+<pre id='out'></pre>
+
+<script>
+const GITHUB_USER = "ardnaque";
+const GITHUB_REPO = "nadcasove_hodiny";
+const FILE_PATH = "data.json";
+const TOKEN = "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";
+const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+
+async function loadData(){
+  const res = await fetch(API_URL, {headers:{Authorization:`Bearer ${TOKEN}`}});
+  const data = await res.json();
+  const content = JSON.parse(atob(data.content));
+  document.getElementById('out').textContent = JSON.stringify(content,null,2);
+}
+</script>
+</body>
+</html>
